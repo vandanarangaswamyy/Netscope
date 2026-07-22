@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: Network Reliability Lab
+    folder: Network Reliability Lab
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: dbnodes
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - node-a:8000
+          - node-b:8000
+          - node-c:8000
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance

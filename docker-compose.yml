@@ -1,0 +1,119 @@
+services:
+  node-a:
+    build:
+      context: .
+      dockerfile: services/dbnode/Dockerfile
+    environment:
+      NODE_ID: node-a
+      NODE_ROLE: analytics-worker
+      SIMULATED_LATENCY_MS: "15"
+    expose:
+      - "8000"
+    networks:
+      - lab-private
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  node-b:
+    build:
+      context: .
+      dockerfile: services/dbnode/Dockerfile
+    environment:
+      NODE_ID: node-b
+      NODE_ROLE: analytics-worker
+      SIMULATED_LATENCY_MS: "25"
+    expose:
+      - "8000"
+    networks:
+      - lab-private
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  node-c:
+    build:
+      context: .
+      dockerfile: services/dbnode/Dockerfile
+    environment:
+      NODE_ID: node-c
+      NODE_ROLE: analytics-worker
+      SIMULATED_LATENCY_MS: "35"
+    expose:
+      - "8000"
+    networks:
+      - lab-private
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      node-a:
+        condition: service_healthy
+      node-b:
+        condition: service_healthy
+      node-c:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - lab-private
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    depends_on:
+      node-a:
+        condition: service_healthy
+      node-b:
+        condition: service_healthy
+      node-c:
+        condition: service_healthy
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=6h"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - lab-private
+
+  grafana:
+    image: grafana/grafana-oss:11.5.2
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: lab-admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - lab-private
+
+networks:
+  lab-private:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
