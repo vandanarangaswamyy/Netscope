@@ -7,8 +7,8 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir fastapi prometheus-client "uvicorn[standard]" pydantic-settings
 
-COPY services/dbnode/app ./app
+COPY services/dbnode/dbnode ./dbnode
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "dbnode.main:app", "--host", "0.0.0.0", "--port", "8000"]

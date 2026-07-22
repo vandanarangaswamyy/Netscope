@@ -21,7 +21,7 @@ This models an AWS design where application traffic reaches an internal load bal
 │   ├── nginx/nginx.conf
 │   └── prometheus/prometheus.yml
 └── services/dbnode
-    ├── app/main.py
+    ├── dbnode/main.py
     └── tests/test_main.py
 ```
 

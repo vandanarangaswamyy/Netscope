@@ -14,12 +14,13 @@ This lab simulates the network reliability concerns of a distributed analytics d
 
 ## Current Milestone
 
-Milestone 2 adds observability to the local cluster:
+Milestone 3 adds synthetic traffic and baseline SLO metrics to the local cluster:
 
 - Three FastAPI service nodes: `node-a`, `node-b`, and `node-c`.
 - One Nginx load balancer on `localhost:8080`.
+- One traffic generator on `localhost:9000`, sending synthetic client requests through Nginx.
 - Prometheus on `localhost:9090`, scraping each private node directly.
-- Grafana on `localhost:3000`, pre-provisioned with a Prometheus datasource and dashboard.
+- Grafana on `localhost:3000`, pre-provisioned with Prometheus dashboards.
 - Health, identity, query, and metrics endpoints for validating load balancing and observability.
 - Automated pytest coverage for service behavior.
 - GitHub Actions workflow for Python tests.
@@ -44,6 +45,8 @@ Verify the load balancer:
 curl http://localhost:8080/health
 curl http://localhost:8080/node
 curl http://localhost:8080/metrics
+curl http://localhost:9000/health
+curl http://localhost:9000/stats
 curl "http://localhost:9090/api/v1/targets?state=active"
 ```
 

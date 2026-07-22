@@ -60,6 +60,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "prometheus-client" },
     { name = "pydantic-settings" },
     { name = "uvicorn", extra = ["standard"] },
@@ -67,23 +68,20 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "pytest" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.116.0" },
+    { name = "httpx", specifier = ">=0.28.0" },
     { name = "prometheus-client", specifier = ">=0.22.0" },
     { name = "pydantic-settings", specifier = ">=2.8.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.35.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "httpx", specifier = ">=0.28.0" },
-    { name = "pytest", specifier = ">=8.4.0" },
-]
+dev = [{ name = "pytest", specifier = ">=8.4.0" }]
 
 [[package]]
 name = "colorama"

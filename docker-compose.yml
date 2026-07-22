@@ -72,6 +72,30 @@ services:
     networks:
       - lab-private
 
+  trafficgen:
+    build:
+      context: .
+      dockerfile: services/trafficgen/Dockerfile
+    depends_on:
+      nginx:
+        condition: service_started
+    environment:
+      TARGET_BASE_URL: http://nginx:8080
+      REQUESTS_PER_SECOND: "2"
+      REQUEST_TIMEOUT_SECONDS: "2"
+      SLO_LATENCY_MS: "250"
+      TRAFFIC_ENABLED: "true"
+    ports:
+      - "9000:9000"
+    networks:
+      - lab-private
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/health', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
   prometheus:
     image: prom/prometheus:v2.55.1
     depends_on:
@@ -80,6 +104,8 @@ services:
       node-b:
         condition: service_healthy
       node-c:
+        condition: service_healthy
+      trafficgen:
         condition: service_healthy
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"

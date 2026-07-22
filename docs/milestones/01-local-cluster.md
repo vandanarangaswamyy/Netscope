@@ -20,7 +20,7 @@ Distributed analytics platforms usually separate client entry points from intern
 ├── pyproject.toml
 └── services/dbnode
     ├── Dockerfile
-    ├── app
+    ├── dbnode
     │   ├── __init__.py
     │   ├── main.py
     │   └── settings.py

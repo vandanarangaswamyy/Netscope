@@ -2,8 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from app.main import app
-from app.settings import Settings, get_settings
+from dbnode.main import app
+from dbnode.settings import Settings, get_settings
 
 
 @pytest.fixture(autouse=True)

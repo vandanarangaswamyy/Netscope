@@ -3,7 +3,7 @@ from time import perf_counter, sleep
 from fastapi import Depends, FastAPI, Query, Request, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 
-from app.settings import Settings, get_settings
+from dbnode.settings import Settings, get_settings
 
 REQUEST_COUNT = Counter(
     "dbnode_http_requests_total",

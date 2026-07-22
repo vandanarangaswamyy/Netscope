@@ -13,3 +13,9 @@ scrape_configs:
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
+
+  - job_name: trafficgen
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - trafficgen:9000
