@@ -14,13 +14,14 @@ This lab simulates the network reliability concerns of a distributed analytics d
 
 ## Current Milestone
 
-Milestone 3 adds synthetic traffic and baseline SLO metrics to the local cluster:
+Milestone 4 adds the `netprobe` diagnostics CLI:
 
 - Three FastAPI service nodes: `node-a`, `node-b`, and `node-c`.
 - One Nginx load balancer on `localhost:8080`.
 - One traffic generator on `localhost:9000`, sending synthetic client requests through Nginx.
 - Prometheus on `localhost:9090`, scraping each private node directly.
 - Grafana on `localhost:3000`, pre-provisioned with Prometheus dashboards.
+- `netprobe`, a Python CLI for DNS, TCP, HTTP health, latency, route, and rejected-traffic diagnostics.
 - Health, identity, query, and metrics endpoints for validating load balancing and observability.
 - Automated pytest coverage for service behavior.
 - GitHub Actions workflow for Python tests.
@@ -48,9 +49,16 @@ curl http://localhost:8080/metrics
 curl http://localhost:9000/health
 curl http://localhost:9000/stats
 curl "http://localhost:9090/api/v1/targets?state=active"
+uv run netprobe diagnose --target http://localhost:8080 --prometheus-url http://localhost:9090
 ```
 
 Open Grafana at `http://localhost:3000` and log in with `admin` / `lab-admin`.
+
+Run diagnostics from inside the private Docker network:
+
+```bash
+docker compose --profile tools run --rm netprobe diagnose --target http://nginx:8080 --prometheus-url http://prometheus:9090
+```
 
 Stop and remove local containers:
 

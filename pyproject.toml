@@ -12,11 +12,21 @@ dependencies = [
     "uvicorn[standard]>=0.35.0",
 ]
 
+[project.scripts]
+netprobe = "netprobe.cli:main"
+
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["netprobe*"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.0",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["services/dbnode/tests", "services/trafficgen/tests"]
+testpaths = ["services/dbnode/tests", "services/trafficgen/tests", "tests"]
 pythonpath = ["services/dbnode", "services/trafficgen"]

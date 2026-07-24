@@ -136,6 +136,20 @@ services:
     networks:
       - lab-private
 
+  netprobe:
+    profiles:
+      - tools
+    build:
+      context: .
+      dockerfile: infra/netprobe/Dockerfile
+    depends_on:
+      nginx:
+        condition: service_started
+      prometheus:
+        condition: service_started
+    networks:
+      - lab-private
+
 networks:
   lab-private:
     driver: bridge
