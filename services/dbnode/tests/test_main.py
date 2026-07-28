@@ -39,6 +39,7 @@ def test_node_returns_latency_configuration():
 
     assert response.status_code == 200
     assert response.json()["simulated_latency_ms"] == 42
+    assert response.json()["force_unhealthy"] is False
 
 
 def test_query_includes_sql_and_elapsed_time():
@@ -53,6 +54,37 @@ def test_query_includes_sql_and_elapsed_time():
     assert payload["status"] == "ok"
     assert payload["sql"] == "select count(*) from fact_sales"
     assert payload["elapsed_ms"] >= 1
+
+
+def test_health_can_be_forced_unhealthy():
+    override_settings(NODE_ID="node-test", FORCE_UNHEALTHY=True)
+    client = TestClient(app)
+
+    response = client.get("/health")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["status"] == "unhealthy"
+    assert response.json()["detail"]["node_id"] == "node-test"
+
+
+def test_query_fails_when_unhealthy_by_default():
+    override_settings(NODE_ID="node-test", FORCE_UNHEALTHY=True)
+    client = TestClient(app)
+
+    response = client.get("/query")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["node_id"] == "node-test"
+
+
+def test_query_can_continue_when_health_is_unhealthy():
+    override_settings(NODE_ID="node-test", FORCE_UNHEALTHY=True, FAIL_QUERIES_WHEN_UNHEALTHY=False)
+    client = TestClient(app)
+
+    response = client.get("/query")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
 
 
 def test_metrics_exposes_node_info():
@@ -82,3 +114,8 @@ def test_metrics_counts_application_requests():
 def test_rejects_negative_latency():
     with pytest.raises(ValidationError, match="SIMULATED_LATENCY_MS must be non-negative"):
         Settings(SIMULATED_LATENCY_MS=-1)
+
+
+def test_rejects_invalid_health_failure_status_code():
+    with pytest.raises(ValidationError, match="HEALTH_FAILURE_STATUS_CODE must be between 400 and 599"):
+        Settings(HEALTH_FAILURE_STATUS_CODE=200)

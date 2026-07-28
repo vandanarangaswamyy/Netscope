@@ -14,7 +14,7 @@ This lab simulates the network reliability concerns of a distributed analytics d
 
 ## Current Milestone
 
-Milestone 4 adds the `netprobe` diagnostics CLI:
+Milestone 5 adds controlled local failure scenarios:
 
 - Three FastAPI service nodes: `node-a`, `node-b`, and `node-c`.
 - One Nginx load balancer on `localhost:8080`.
@@ -22,6 +22,7 @@ Milestone 4 adds the `netprobe` diagnostics CLI:
 - Prometheus on `localhost:9090`, scraping each private node directly.
 - Grafana on `localhost:3000`, pre-provisioned with Prometheus dashboards.
 - `netprobe`, a Python CLI for DNS, TCP, HTTP health, latency, route, and rejected-traffic diagnostics.
+- A failure overlay that makes `node-b` slow and `node-c` unhealthy without publishing node ports.
 - Health, identity, query, and metrics endpoints for validating load balancing and observability.
 - Automated pytest coverage for service behavior.
 - GitHub Actions workflow for Python tests.
@@ -58,6 +59,12 @@ Run diagnostics from inside the private Docker network:
 
 ```bash
 docker compose --profile tools run --rm netprobe diagnose --target http://nginx:8080 --prometheus-url http://prometheus:9090
+```
+
+Run controlled local failures:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.failures.yml up --build
 ```
 
 Stop and remove local containers:

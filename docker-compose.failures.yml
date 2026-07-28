@@ -1,0 +1,14 @@
+services:
+  node-b:
+    environment:
+      SIMULATED_LATENCY_MS: "750"
+
+  node-c:
+    environment:
+      FORCE_UNHEALTHY: "true"
+      FAIL_QUERIES_WHEN_UNHEALTHY: "true"
+      HEALTH_FAILURE_STATUS_CODE: "503"
+
+  trafficgen:
+    environment:
+      SLO_LATENCY_MS: "100"

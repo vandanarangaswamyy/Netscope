@@ -1,6 +1,6 @@
 from time import perf_counter, sleep
 
-from fastapi import Depends, FastAPI, Query, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 
 from dbnode.settings import Settings, get_settings
@@ -58,6 +58,17 @@ async def collect_request_metrics(request: Request, call_next):
 
 @app.get("/health")
 def health(settings: Settings = Depends(get_settings)) -> dict[str, str]:
+    if settings.force_unhealthy:
+        raise HTTPException(
+            status_code=settings.health_failure_status_code,
+            detail={
+                "status": "unhealthy",
+                "node_id": settings.node_id,
+                "role": settings.node_role,
+                "reason": "FORCE_UNHEALTHY is enabled",
+            },
+        )
+
     return {
         "status": "healthy",
         "node_id": settings.node_id,
@@ -66,11 +77,13 @@ def health(settings: Settings = Depends(get_settings)) -> dict[str, str]:
 
 
 @app.get("/node")
-def node(settings: Settings = Depends(get_settings)) -> dict[str, str | int]:
+def node(settings: Settings = Depends(get_settings)) -> dict[str, str | bool | int]:
     return {
         "node_id": settings.node_id,
         "role": settings.node_role,
         "simulated_latency_ms": settings.simulated_latency_ms,
+        "force_unhealthy": settings.force_unhealthy,
+        "fail_queries_when_unhealthy": settings.fail_queries_when_unhealthy,
     }
 
 
@@ -83,6 +96,16 @@ def query(
 
     if settings.simulated_latency_ms:
         sleep(settings.simulated_latency_ms / 1000)
+
+    if settings.force_unhealthy and settings.fail_queries_when_unhealthy:
+        raise HTTPException(
+            status_code=settings.health_failure_status_code,
+            detail={
+                "status": "unhealthy",
+                "node_id": settings.node_id,
+                "reason": "FORCE_UNHEALTHY is enabled",
+            },
+        )
 
     elapsed_ms = round((perf_counter() - started) * 1000, 2)
     return {

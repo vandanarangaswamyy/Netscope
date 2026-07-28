@@ -60,11 +60,11 @@ services:
     image: nginx:1.27-alpine
     depends_on:
       node-a:
-        condition: service_healthy
+        condition: service_started
       node-b:
-        condition: service_healthy
+        condition: service_started
       node-c:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "8080:8080"
     volumes:
@@ -100,13 +100,13 @@ services:
     image: prom/prometheus:v2.55.1
     depends_on:
       node-a:
-        condition: service_healthy
+        condition: service_started
       node-b:
-        condition: service_healthy
+        condition: service_started
       node-c:
-        condition: service_healthy
+        condition: service_started
       trafficgen:
-        condition: service_healthy
+        condition: service_started
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.retention.time=6h"
