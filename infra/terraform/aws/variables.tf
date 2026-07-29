@@ -115,3 +115,15 @@ variable "enable_private_image_pull_endpoints" {
   type        = bool
   default     = false
 }
+
+variable "enable_ecr_repository" {
+  description = "Create a Terraform-managed ECR repository for the dbnode image."
+  type        = bool
+  default     = false
+}
+
+variable "ecr_repository_name" {
+  description = "Name of the optional ECR repository for dbnode images."
+  type        = string
+  default     = "netscope-dbnode"
+}

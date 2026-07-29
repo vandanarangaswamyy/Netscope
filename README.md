@@ -14,7 +14,7 @@ This lab simulates the network reliability concerns of a distributed analytics d
 
 ## Current Milestone
 
-Milestone 7 adds the AWS private service deployment layer:
+Milestone 8 adds AWS deployment operations:
 
 - Three FastAPI service nodes: `node-a`, `node-b`, and `node-c`.
 - One Nginx load balancer on `localhost:8080`.
@@ -25,6 +25,7 @@ Milestone 7 adds the AWS private service deployment layer:
 - A failure overlay that makes `node-b` slow and `node-c` unhealthy without publishing node ports.
 - Terraform under `infra/terraform/aws` for a two-AZ VPC, public/private subnets, internal ALB, private DNS, VPC Flow Logs, CloudWatch Logs, security groups, route tables, and optional NAT gateway.
 - Optional private ECS/Fargate deployment for three dbnode services behind the internal ALB.
+- Optional Terraform-managed ECR repository and manual GitHub Actions workflow for image push and Terraform plans.
 - Health, identity, query, and metrics endpoints for validating load balancing and observability.
 - Automated pytest coverage for service behavior.
 - GitHub Actions workflow for Python tests.
@@ -87,6 +88,14 @@ terraform -chdir=infra/terraform/aws plan \
   -var='enable_private_image_pull_endpoints=true' \
   -var='dbnode_image_uri=ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/netscope-dbnode:latest'
 ```
+
+Run the AWS planning workflow manually from GitHub Actions:
+
+```text
+Actions > AWS Image And Terraform Plan > Run workflow
+```
+
+The workflow can build and push the dbnode image and run Terraform plan. It intentionally does not run apply or destroy until remote Terraform state is added.
 
 Stop and remove local containers:
 

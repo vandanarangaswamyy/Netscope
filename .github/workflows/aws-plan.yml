@@ -1,0 +1,178 @@
+name: AWS Image And Terraform Plan
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region for ECR and Terraform.
+        required: true
+        default: us-east-1
+      ecr_repository:
+        description: Existing ECR repository name for the dbnode image.
+        required: true
+        default: netscope-dbnode
+      image_tag:
+        description: Image tag to push when push_image is true.
+        required: true
+        default: manual
+      push_image:
+        description: Build and push the dbnode image to ECR.
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
+        default: "false"
+      enable_ecr_repository:
+        description: Include the Terraform-managed ECR repository in the plan.
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
+        default: "false"
+      enable_service_deployment:
+        description: Include the private ECS/Fargate dbnode deployment in the plan.
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
+        default: "false"
+      enable_private_image_pull_endpoints:
+        description: Include private ECR, Logs, and S3 endpoints in the plan.
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
+        default: "false"
+      enable_nat_gateway:
+        description: Include the optional NAT gateway in the plan.
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
+        default: "false"
+      dbnode_image_uri:
+        description: Existing dbnode image URI. Leave empty when push_image is true.
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TERRAFORM_DIR: infra/terraform/aws
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Run tests
+        run: uv run pytest
+
+  build-image:
+    if: inputs.push_image == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image_uri: ${{ steps.image.outputs.image_uri }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push dbnode image
+        id: image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          docker build -f services/dbnode/Dockerfile -t "${IMAGE_URI}" .
+          docker push "${IMAGE_URI}"
+          echo "image_uri=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
+
+  terraform-plan:
+    runs-on: ubuntu-latest
+    needs:
+      - test
+      - build-image
+    if: always() && needs.test.result == 'success' && (needs.build-image.result == 'success' || needs.build-image.result == 'skipped')
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Resolve dbnode image URI
+        id: image
+        env:
+          PUSHED_IMAGE_URI: ${{ needs.build-image.outputs.image_uri }}
+          PROVIDED_IMAGE_URI: ${{ inputs.dbnode_image_uri }}
+          PUSH_IMAGE: ${{ inputs.push_image }}
+          ENABLE_SERVICE_DEPLOYMENT: ${{ inputs.enable_service_deployment }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="${PROVIDED_IMAGE_URI}"
+          if [[ "${PUSH_IMAGE}" == "true" ]]; then
+            IMAGE_URI="${PUSHED_IMAGE_URI}"
+          fi
+
+          if [[ "${ENABLE_SERVICE_DEPLOYMENT}" == "true" && -z "${IMAGE_URI}" ]]; then
+            echo "::error::enable_service_deployment=true requires push_image=true or dbnode_image_uri."
+            exit 1
+          fi
+
+          echo "image_uri=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
+
+      - name: Terraform fmt
+        run: terraform -chdir="${TERRAFORM_DIR}" fmt -check
+
+      - name: Terraform init
+        run: terraform -chdir="${TERRAFORM_DIR}" init -backend=false
+
+      - name: Terraform validate
+        run: terraform -chdir="${TERRAFORM_DIR}" validate
+
+      - name: Terraform plan
+        run: |
+          terraform -chdir="${TERRAFORM_DIR}" plan -input=false \
+            -var="aws_region=${{ inputs.aws_region }}" \
+            -var="enable_ecr_repository=${{ inputs.enable_ecr_repository }}" \
+            -var="ecr_repository_name=${{ inputs.ecr_repository }}" \
+            -var="enable_service_deployment=${{ inputs.enable_service_deployment }}" \
+            -var="enable_private_image_pull_endpoints=${{ inputs.enable_private_image_pull_endpoints }}" \
+            -var="enable_nat_gateway=${{ inputs.enable_nat_gateway }}" \
+            -var="dbnode_image_uri=${{ steps.image.outputs.image_uri }}"

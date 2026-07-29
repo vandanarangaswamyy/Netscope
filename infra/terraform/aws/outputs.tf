@@ -57,3 +57,8 @@ output "dbnode_log_group_name" {
   description = "CloudWatch log group for dbnode ECS tasks when enabled."
   value       = var.enable_service_deployment ? aws_cloudwatch_log_group.dbnode[0].name : null
 }
+
+output "dbnode_ecr_repository_url" {
+  description = "URL of the optional Terraform-managed dbnode ECR repository."
+  value       = var.enable_ecr_repository ? aws_ecr_repository.dbnode[0].repository_url : null
+}

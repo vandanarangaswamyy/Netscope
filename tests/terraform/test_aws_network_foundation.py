@@ -118,3 +118,14 @@ def test_ecs_logs_and_image_pull_controls_exist():
     assert 'resource "aws_vpc_endpoint" "ecr_dkr"' in ecs_tf
     assert 'resource "aws_vpc_endpoint" "logs"' in ecs_tf
     assert 'resource "aws_vpc_endpoint" "s3"' in ecs_tf
+
+
+def test_ecr_repository_is_optional_and_managed_by_terraform():
+    variables_tf = read_tf("variables.tf")
+    ecr_tf = read_tf("ecr.tf")
+
+    assert 'variable "enable_ecr_repository"' in variables_tf
+    assert "default     = false" in variables_tf
+    assert 'resource "aws_ecr_repository" "dbnode"' in ecr_tf
+    assert "scan_on_push = true" in ecr_tf
+    assert 'resource "aws_ecr_lifecycle_policy" "dbnode"' in ecr_tf
