@@ -85,3 +85,33 @@ variable "flow_log_retention_days" {
   type        = number
   default     = 7
 }
+
+variable "enable_service_deployment" {
+  description = "Deploy three private ECS/Fargate dbnode services behind the internal load balancer."
+  type        = bool
+  default     = false
+}
+
+variable "dbnode_image_uri" {
+  description = "Container image URI for the dbnode service. Required when enable_service_deployment is true."
+  type        = string
+  default     = ""
+}
+
+variable "service_task_cpu" {
+  description = "CPU units for each dbnode Fargate task."
+  type        = number
+  default     = 256
+}
+
+variable "service_task_memory" {
+  description = "Memory in MiB for each dbnode Fargate task."
+  type        = number
+  default     = 512
+}
+
+variable "enable_private_image_pull_endpoints" {
+  description = "Create private VPC endpoints for pulling ECR images and writing CloudWatch logs without a NAT gateway."
+  type        = bool
+  default     = false
+}

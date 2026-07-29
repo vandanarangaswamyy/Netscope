@@ -71,3 +71,50 @@ def test_flow_logs_default_to_enabled_with_short_retention():
     assert 'variable "flow_log_retention_days"' in variables_tf
     assert "default     = 7" in variables_tf
     assert 'traffic_type    = "ALL"' in main_tf
+
+
+def test_ecs_service_deployment_is_opt_in_and_private():
+    variables_tf = read_tf("variables.tf")
+    ecs_tf = read_tf("ecs.tf")
+
+    assert 'variable "enable_service_deployment"' in variables_tf
+    assert "default     = false" in variables_tf
+    assert 'resource "aws_ecs_cluster" "this"' in ecs_tf
+    assert 'resource "aws_ecs_task_definition" "dbnode"' in ecs_tf
+    assert 'resource "aws_ecs_service" "dbnode"' in ecs_tf
+    assert 'subnets          = aws_subnet.private[*].id' in ecs_tf
+    assert 'security_groups  = [aws_security_group.service_nodes.id]' in ecs_tf
+    assert "assign_public_ip = false" in ecs_tf
+
+
+def test_ecs_deploys_three_named_dbnode_services():
+    ecs_tf = read_tf("ecs.tf")
+
+    assert "node-a" in ecs_tf
+    assert "node-b" in ecs_tf
+    assert "node-c" in ecs_tf
+    assert "desired_count   = 1" in ecs_tf
+    assert "NODE_ID" in ecs_tf
+    assert "SIMULATED_LATENCY_MS" in ecs_tf
+
+
+def test_ecs_service_registers_with_internal_alb_target_group():
+    ecs_tf = read_tf("ecs.tf")
+
+    assert "target_group_arn = aws_lb_target_group.service_nodes.arn" in ecs_tf
+    assert 'container_name   = "dbnode"' in ecs_tf
+    assert "container_port   = var.node_port" in ecs_tf
+    assert "aws_lb_listener.service" in ecs_tf
+
+
+def test_ecs_logs_and_image_pull_controls_exist():
+    variables_tf = read_tf("variables.tf")
+    ecs_tf = read_tf("ecs.tf")
+
+    assert 'resource "aws_cloudwatch_log_group" "dbnode"' in ecs_tf
+    assert "awslogs-group" in ecs_tf
+    assert 'variable "enable_private_image_pull_endpoints"' in variables_tf
+    assert 'resource "aws_vpc_endpoint" "ecr_api"' in ecs_tf
+    assert 'resource "aws_vpc_endpoint" "ecr_dkr"' in ecs_tf
+    assert 'resource "aws_vpc_endpoint" "logs"' in ecs_tf
+    assert 'resource "aws_vpc_endpoint" "s3"' in ecs_tf

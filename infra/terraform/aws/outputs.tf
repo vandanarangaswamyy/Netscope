@@ -28,6 +28,11 @@ output "service_node_security_group_id" {
   value       = aws_security_group.service_nodes.id
 }
 
+output "service_target_group_arn" {
+  description = "Target group ARN for private dbnode services."
+  value       = aws_lb_target_group.service_nodes.arn
+}
+
 output "nat_gateway_enabled" {
   description = "Whether the optional NAT gateway was created."
   value       = var.enable_nat_gateway
@@ -36,4 +41,19 @@ output "nat_gateway_enabled" {
 output "vpc_flow_logs_log_group_name" {
   description = "CloudWatch log group for VPC Flow Logs, when enabled."
   value       = var.enable_flow_logs ? aws_cloudwatch_log_group.vpc_flow_logs[0].name : null
+}
+
+output "ecs_cluster_name" {
+  description = "ECS cluster name when service deployment is enabled."
+  value       = var.enable_service_deployment ? aws_ecs_cluster.this[0].name : null
+}
+
+output "ecs_service_names" {
+  description = "ECS service names for deployed dbnodes."
+  value       = var.enable_service_deployment ? [for service in aws_ecs_service.dbnode : service.name] : []
+}
+
+output "dbnode_log_group_name" {
+  description = "CloudWatch log group for dbnode ECS tasks when enabled."
+  value       = var.enable_service_deployment ? aws_cloudwatch_log_group.dbnode[0].name : null
 }

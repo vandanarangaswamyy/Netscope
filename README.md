@@ -14,7 +14,7 @@ This lab simulates the network reliability concerns of a distributed analytics d
 
 ## Current Milestone
 
-Milestone 6 adds the AWS network foundation:
+Milestone 7 adds the AWS private service deployment layer:
 
 - Three FastAPI service nodes: `node-a`, `node-b`, and `node-c`.
 - One Nginx load balancer on `localhost:8080`.
@@ -24,6 +24,7 @@ Milestone 6 adds the AWS network foundation:
 - `netprobe`, a Python CLI for DNS, TCP, HTTP health, latency, route, and rejected-traffic diagnostics.
 - A failure overlay that makes `node-b` slow and `node-c` unhealthy without publishing node ports.
 - Terraform under `infra/terraform/aws` for a two-AZ VPC, public/private subnets, internal ALB, private DNS, VPC Flow Logs, CloudWatch Logs, security groups, route tables, and optional NAT gateway.
+- Optional private ECS/Fargate deployment for three dbnode services behind the internal ALB.
 - Health, identity, query, and metrics endpoints for validating load balancing and observability.
 - Automated pytest coverage for service behavior.
 - GitHub Actions workflow for Python tests.
@@ -77,6 +78,15 @@ terraform plan
 ```
 
 The NAT gateway is disabled by default to keep costs low. Use `-var='enable_nat_gateway=true'` only when you need private subnet internet egress.
+
+Review the optional private ECS deployment plan:
+
+```bash
+terraform -chdir=infra/terraform/aws plan \
+  -var='enable_service_deployment=true' \
+  -var='enable_private_image_pull_endpoints=true' \
+  -var='dbnode_image_uri=ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/netscope-dbnode:latest'
+```
 
 Stop and remove local containers:
 
