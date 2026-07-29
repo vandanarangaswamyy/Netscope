@@ -9,5 +9,6 @@ __pycache__/
 *.tfstate.*
 *.tfvars
 *.tfplan
+.terraform-state-backups/
 crash.log
 crash.*.log

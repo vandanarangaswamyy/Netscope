@@ -14,7 +14,7 @@ This lab simulates the network reliability concerns of a distributed analytics d
 
 ## Current Milestone
 
-Milestone 9 adds secure GitHub Actions OIDC setup:
+Milestone 10 prepares the controlled end-to-end AWS deployment sequence:
 
 - Three FastAPI service nodes: `node-a`, `node-b`, and `node-c`.
 - One Nginx load balancer on `localhost:8080`.
@@ -27,6 +27,7 @@ Milestone 9 adds secure GitHub Actions OIDC setup:
 - Optional private ECS/Fargate deployment for three dbnode services behind the internal ALB.
 - Optional Terraform-managed ECR repository and manual GitHub Actions workflow for image push and Terraform plans.
 - Terraform OIDC bootstrap under `infra/terraform/github-oidc` for a repo/main-scoped GitHub Actions IAM role.
+- Controlled AWS runbook for ECR creation, image push, private ECS apply, health verification, internal connectivity testing, CloudWatch/Flow Log evidence, cost safeguards, and same-day destroy.
 - Health, identity, query, and metrics endpoints for validating load balancing and observability.
 - Automated pytest coverage for service behavior.
 - GitHub Actions workflow for Python tests.
@@ -112,6 +113,14 @@ repo:vandanarangaswamyy@181282565/Netscope@1308859104:ref:refs/heads/main
 ```
 
 After applying it manually, add the `github_actions_role_arn` output as the `AWS_ROLE_ARN` GitHub Actions secret.
+
+Review the end-to-end AWS deployment runbook:
+
+```bash
+less docs/runbooks/aws-end-to-end-deployment.md
+```
+
+Do not run the apply steps until you are ready to create and destroy billable AWS resources the same day.
 
 Stop and remove local containers:
 
