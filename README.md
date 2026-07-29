@@ -14,7 +14,7 @@ This lab simulates the network reliability concerns of a distributed analytics d
 
 ## Current Milestone
 
-Milestone 5 adds controlled local failure scenarios:
+Milestone 6 adds the AWS network foundation:
 
 - Three FastAPI service nodes: `node-a`, `node-b`, and `node-c`.
 - One Nginx load balancer on `localhost:8080`.
@@ -23,6 +23,7 @@ Milestone 5 adds controlled local failure scenarios:
 - Grafana on `localhost:3000`, pre-provisioned with Prometheus dashboards.
 - `netprobe`, a Python CLI for DNS, TCP, HTTP health, latency, route, and rejected-traffic diagnostics.
 - A failure overlay that makes `node-b` slow and `node-c` unhealthy without publishing node ports.
+- Terraform under `infra/terraform/aws` for a two-AZ VPC, public/private subnets, internal ALB, private DNS, VPC Flow Logs, CloudWatch Logs, security groups, route tables, and optional NAT gateway.
 - Health, identity, query, and metrics endpoints for validating load balancing and observability.
 - Automated pytest coverage for service behavior.
 - GitHub Actions workflow for Python tests.
@@ -66,6 +67,16 @@ Run controlled local failures:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.failures.yml up --build
 ```
+
+Review the AWS network foundation:
+
+```bash
+cd infra/terraform/aws
+terraform init
+terraform plan
+```
+
+The NAT gateway is disabled by default to keep costs low. Use `-var='enable_nat_gateway=true'` only when you need private subnet internet egress.
 
 Stop and remove local containers:
 

@@ -4,3 +4,10 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .DS_Store
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
+crash.log
+crash.*.log
