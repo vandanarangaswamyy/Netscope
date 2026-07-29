@@ -10,5 +10,5 @@ output "github_oidc_provider_arn" {
 
 output "trusted_github_subject_claim" {
   description = "Exact GitHub OIDC subject claim trusted by this role."
-  value       = var.github_subject_claim
+  value       = local.github_subject_claim
 }

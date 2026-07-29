@@ -10,7 +10,7 @@ It is separate from `infra/terraform/aws` so you can review and manage GitHub Ac
 - IAM role for GitHub Actions.
 - Trust policy restricted to:
   - audience: `sts.amazonaws.com`
-  - subject: `repo:vandanarangaswamyy/Netscope:ref:refs/heads/main`
+  - subject: `repo:vandanarangaswamyy@181282565/Netscope@1308859104:ref:refs/heads/main`
 - Least-privilege policy for:
   - Terraform plan read-only discovery.
 - Optional dbnode image push to one ECR repository.
@@ -23,21 +23,43 @@ terraform plan -var='existing_github_oidc_provider_arn=arn:aws:iam::ACCOUNT_ID:o
 
 ## Important Subject Claim Note
 
-GitHub documents that repositories created after July 15, 2026, or repositories that opt in to immutable subject claims, may use an immutable `sub` format with owner and repository IDs.
+GitHub documents repository OIDC customization through the Actions OIDC REST API. Use this command to discover the subject settings for NetScope:
+
+```bash
+gh api \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2026-03-10" \
+  /repos/vandanarangaswamyy/Netscope/actions/oidc/customization/sub
+```
+
+The confirmed response was:
+
+```json
+{
+  "use_default": true,
+  "use_immutable_subject": false,
+  "sub_claim_prefix": "repo:vandanarangaswamyy@181282565/Netscope@1308859104"
+}
+```
 
 The default subject claim is:
 
 ```text
-repo:vandanarangaswamyy/Netscope:ref:refs/heads/main
+repo:vandanarangaswamyy@181282565/Netscope@1308859104:ref:refs/heads/main
 ```
 
-If GitHub shows an immutable claim for this repository, pass it explicitly:
+It is computed from explicit validated variables:
 
-```bash
-terraform plan -var='github_subject_claim=repo:OWNER@OWNER_ID/REPO@REPO_ID:ref:refs/heads/main'
+```hcl
+github_owner                = "vandanarangaswamyy"
+github_owner_id             = "181282565"
+github_repository           = "Netscope"
+github_repository_id        = "1308859104"
+github_branch               = "main"
+github_subject_claim_prefix = "repo:vandanarangaswamyy@181282565/Netscope@1308859104"
 ```
 
-Do not use wildcards. The variable rejects `*` and `?`.
+Do not use repository or branch wildcards. Subject-related variables reject `*` and `?`, and the prefix must match the explicit owner and repository IDs.
 
 ## Commands
 
@@ -99,3 +121,7 @@ The workflow will not work until this secret exists.
 This role is intentionally not an apply role. It has read-only permissions for Terraform plans and write permissions only for pushing images to the configured ECR repository.
 
 The workflow remains manual-only and does not run `terraform apply` or `terraform destroy`.
+
+## Verified Workflow Result
+
+With `AWS_ROLE_ARN` configured and the subject claim corrected to the API-confirmed value, the manual `AWS Image And Terraform Plan` workflow completed successfully with `push_image=false`. Tests and Terraform plan passed, `build-image` was skipped, and no infrastructure was applied.

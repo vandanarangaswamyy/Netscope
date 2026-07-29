@@ -13,7 +13,7 @@ The key control is the IAM role trust policy. It must restrict:
 For NetScope, the default trusted subject is:
 
 ```text
-repo:vandanarangaswamyy/Netscope:ref:refs/heads/main
+repo:vandanarangaswamyy@181282565/Netscope@1308859104:ref:refs/heads/main
 ```
 
 ## Proposed Folder Structure
@@ -38,31 +38,52 @@ This milestone adds a separate Terraform bootstrap stack for GitHub Actions AWS 
 - IAM role for the NetScope workflow.
 - Trust policy restricted to:
   - `token.actions.githubusercontent.com:aud = sts.amazonaws.com`
-  - `token.actions.githubusercontent.com:sub = repo:vandanarangaswamyy/Netscope:ref:refs/heads/main`
+  - `token.actions.githubusercontent.com:sub = repo:vandanarangaswamyy@181282565/Netscope@1308859104:ref:refs/heads/main`
 - Wildcard rejection for the subject claim variable.
 - Least-privilege IAM policy for:
   - Terraform plan read-only discovery.
   - Optional ECR image push to `netscope-dbnode`.
 - Output for the `AWS_ROLE_ARN` GitHub secret.
 
-## Important GitHub Subject Claim Note
+## GitHub API Discovery
 
-GitHub documents that repositories created after July 15, 2026, or repositories that opt in to immutable subject claims, may use immutable owner and repository IDs in the OIDC `sub` claim.
-
-The default value is owner/name based:
-
-```text
-repo:vandanarangaswamyy/Netscope:ref:refs/heads/main
-```
-
-If GitHub shows an immutable claim for this repository, override it exactly:
+GitHub documents repository OIDC customization through the Actions OIDC REST API. Use this command to discover the subject settings for NetScope:
 
 ```bash
-terraform -chdir=infra/terraform/github-oidc plan \
-  -var='github_subject_claim=repo:OWNER@OWNER_ID/REPO@REPO_ID:ref:refs/heads/main'
+gh api \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2026-03-10" \
+  /repos/vandanarangaswamyy/Netscope/actions/oidc/customization/sub
 ```
 
-Do not use wildcards.
+The confirmed response was:
+
+```json
+{
+  "use_default": true,
+  "use_immutable_subject": false,
+  "sub_claim_prefix": "repo:vandanarangaswamyy@181282565/Netscope@1308859104"
+}
+```
+
+The Terraform trust policy computes this exact branch-scoped subject:
+
+```text
+repo:vandanarangaswamyy@181282565/Netscope@1308859104:ref:refs/heads/main
+```
+
+It uses explicit validated variables:
+
+```hcl
+github_owner                = "vandanarangaswamyy"
+github_owner_id             = "181282565"
+github_repository           = "Netscope"
+github_repository_id        = "1308859104"
+github_branch               = "main"
+github_subject_claim_prefix = "repo:vandanarangaswamyy@181282565/Netscope@1308859104"
+```
+
+Do not use repository or branch wildcards.
 
 ## Permissions Boundary
 
@@ -110,8 +131,8 @@ The tests verify:
 
 - The OIDC provider, role, policy, and attachment exist.
 - The trust policy includes audience and subject conditions.
-- The default subject is restricted to `vandanarangaswamyy/Netscope` on `main`.
-- Subject wildcards are rejected.
+- The default subject is restricted to `vandanarangaswamyy@181282565/Netscope@1308859104` on `main`.
+- Subject and branch wildcards are rejected.
 - Plan permissions are read-only except for scoped ECR push.
 - Secret setup is documented.
 
@@ -130,6 +151,21 @@ terraform -chdir=infra/terraform/github-oidc plan
 ```
 
 Do not run apply until you are ready to create the IAM provider and role.
+
+## Verified Result
+
+After correcting the trust subject to the GitHub API-confirmed value, the manual `AWS Image And Terraform Plan` workflow was rerun successfully:
+
+- Tests completed successfully.
+- Terraform plan completed successfully.
+- `build-image` was correctly skipped with `push_image=false`.
+- No infrastructure was applied.
+
+The trusted subject used by AWS is:
+
+```text
+repo:vandanarangaswamyy@181282565/Netscope@1308859104:ref:refs/heads/main
+```
 
 ## Expected Result
 

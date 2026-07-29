@@ -105,6 +105,12 @@ terraform -chdir=infra/terraform/github-oidc init
 terraform -chdir=infra/terraform/github-oidc plan
 ```
 
+The trust subject is restricted to:
+
+```text
+repo:vandanarangaswamyy@181282565/Netscope@1308859104:ref:refs/heads/main
+```
+
 After applying it manually, add the `github_actions_role_arn` output as the `AWS_ROLE_ARN` GitHub Actions secret.
 
 Stop and remove local containers:

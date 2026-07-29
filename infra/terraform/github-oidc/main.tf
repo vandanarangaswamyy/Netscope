@@ -1,9 +1,10 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  oidc_provider_host = replace(var.github_oidc_provider_url, "https://", "")
-  ecr_repository_arn = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.ecr_repository_name}"
-  oidc_provider_arn  = var.existing_github_oidc_provider_arn != "" ? var.existing_github_oidc_provider_arn : aws_iam_openid_connect_provider.github[0].arn
+  oidc_provider_host   = replace(var.github_oidc_provider_url, "https://", "")
+  ecr_repository_arn   = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.ecr_repository_name}"
+  github_subject_claim = "${var.github_subject_claim_prefix}:ref:refs/heads/${var.github_branch}"
+  oidc_provider_arn    = var.existing_github_oidc_provider_arn != "" ? var.existing_github_oidc_provider_arn : aws_iam_openid_connect_provider.github[0].arn
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -36,7 +37,7 @@ data "aws_iam_policy_document" "trust" {
     condition {
       test     = "StringEquals"
       variable = "${local.oidc_provider_host}:sub"
-      values   = [var.github_subject_claim]
+      values   = [local.github_subject_claim]
     }
   }
 }
